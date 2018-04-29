@@ -4,15 +4,18 @@ import sys
 from cuadruplos import *
 
 valido = True;
+
 #Stacks ---------------------------------------------------------------------------------
 
 saltos = []																
 tipos =[]
 variables = []
 operadores =[]
+cuadruplos =[]
 
 # Variable encargada de contar los cuadruplos 
 tempCont = 1
+tempSaltos = 0
 
 reserved = {
 	  'MAIN' : 'PR_main',
@@ -230,19 +233,19 @@ def p_statments(p):
 #Expresiones ---------------------------------------------------------------------------------------
 
 def p_SuperExp(p):
-	'''SuperExp : Exp
-	            | Exp PR_and CuadruploOpp SuperExp
-	            | Exp PR_or CuadruploOpp SuperExp
-	            | Exp Token_And CuadruploOpp SuperExp
-	            | Exp Token_Or CuadruploOpp SuperExp  '''
+	'''SuperExp : Exp 
+	            | Exp  PR_and CuadruploOpp SuperExp CuadruplosCreaANDOR
+	            | Exp  PR_or CuadruploOpp  SuperExp CuadruplosCreaANDOR
+	            | Exp  Token_And CuadruploOpp SuperExp CuadruplosCreaANDOR
+	            | Exp  Token_Or CuadruploOpp SuperExp CuadruplosCreaANDOR  '''
 def p_Exp(p):
 	'''Exp : miniExp 
-	        | miniExp TOKEN_MAYOR CuadruploOpp miniExp
-	        | miniExp TOKEN_MENOR CuadruploOpp miniExp
-	        | miniExp TOKEN_MAYOR_IG CuadruploOpp miniExp
-	        | miniExp TOKEN_MENOR_IG CuadruploOpp miniExp
-	        | miniExp TOKEN_COMPARA CuadruploOpp miniExp
-	        | miniExp TOKEN_NO_IGUAL CuadruploOpp miniExp'''
+	        | miniExp  TOKEN_MAYOR CuadruploOpp miniExp CuadruplosCreaCompara 
+	        | miniExp TOKEN_MENOR CuadruploOpp miniExp CuadruplosCreaCompara
+	        | miniExp  TOKEN_MAYOR_IG CuadruploOpp miniExp CuadruplosCreaCompara
+	        | miniExp  TOKEN_MENOR_IG CuadruploOpp miniExp CuadruplosCreaCompara
+	        | miniExp  TOKEN_COMPARA CuadruploOpp miniExp CuadruplosCreaCompara
+	        | miniExp  TOKEN_NO_IGUAL CuadruploOpp miniExp CuadruplosCreaCompara'''
 
 def p_miniExp(p):
 	'''miniExp : microExp CuadruplosCrea 
@@ -261,15 +264,16 @@ def p_minimicroExp(p):
 	           | conjunto CuadruplosCreaPow  TOKEN_POW CuadruploOpp minimicroExp '''
 
 def p_conjunto(p):
-	'''conjunto : ID CuadruploMiniExp
+	'''conjunto : ID p_CuadruploMiniExp
 	           | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado
 	           | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado Token_Corchete_Abierto miniExp Token_Corchete_Cerrado
-	           | Token_Entero CuadruploMiniExp
+	           | Token_Entero  CuadruploMiniExp
 	           | Token_Float CuadruploMiniExp
-	           | PR_true
-	           | PR_false
+	           | PR_true CuadruploMiniExp
+	           | PR_false CuadruploMiniExp
 	           | funCall 
-	           | llamada'''
+	           | llamada
+	           | Token_Parent_Abierto CuadruploOpp SuperExp Token_Parent_Cerrado CuadruploOppPop'''
 
 def p_CuadruploMiniExp(p):
 	"CuadruploMiniExp : empty"
@@ -279,26 +283,70 @@ def p_CuadruploOpp(p):
 	"CuadruploOpp : empty"
 	operadores.append(p[-1])
 
+def p_CuadruploOppPop(p):
+	"CuadruploOppPop : empty"
+	operadores.pop()
+
 def p_CuadruploCrea(p):
 	'CuadruplosCrea : empty'
-	global tempNum
-	if len(operadores)-1> 0:
+	if len(operadores)> 0:
+		global tempCont
 		if operadores[len(operadores)-1] == '+' or operadores[len(operadores)-1] == '-' :
-			print (operadores.pop()+','+variables.pop()+ ','+variables.pop()) 
+			varTemp= "t" + str(tempCont)
+			derecho = variables.pop()
+			izquierdo = variables.pop()
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(), izquierdo, derecho , varTemp))
+			variables.append(varTemp)
+			tempCont = tempCont + 1
 
 def p_CuadruploCreaMult(p):
 	'CuadruplosCreaMult : empty'
-	if len(operadores) -1> 0:
+	if len(operadores) > 0:
+		global tempCont
 		if operadores[len(operadores)-1] == '*' or operadores[len(operadores)-1] == '/' :
-			print (operadores.pop()+','+variables.pop()+ ','+variables.pop()) 
+			varTemp= "t" + str(tempCont)
+			derecho = variables.pop()
+			izquierdo =variables.pop()
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(), izquierdo, derecho , varTemp))
+			variables.append(varTemp)
+			tempCont = tempCont + 1
 
 def p_CuadruploCreaPow(p):
 	'CuadruplosCreaPow : empty'
-	if len(operadores)-1> 0:
+	if len(operadores)> 0:
+		global tempCont
 		if operadores[len(operadores)-1] == '^' :
-			print (operadores.pop()+','+variables.pop()+ ','+variables.pop()) 
+			varTemp= "t" + str(tempCont)
+			derecho = variables.pop()
+			izquierdo =variables.pop()
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(), izquierdo, derecho , varTemp))
+			variables.append(varTemp)
+			tempCont = tempCont + 1
 
+def p_CuadruploCreaCompara(p):
+	'CuadruplosCreaCompara : empty'
+	if len(operadores)> 0:
+		global tempCont
+		if operadores[len(operadores)-1] == '<' or operadores[len(operadores)-1] == '>' or operadores[len(operadores)-1] == '!=' or operadores[len(operadores)-1] == '==' or operadores[len(operadores)-1] == '<=' or operadores[len(operadores)-1] == '>=':
+			varTemp= "t" + str(tempCont)
+			derecho = variables.pop()
+			izquierdo = variables.pop()
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(), izquierdo, derecho , varTemp))
+			variables.append(varTemp)
+			tempCont = tempCont + 1
 
+			
+def p_CuadruploCreaANDOR(p):
+	'CuadruplosCreaANDOR : empty'
+	if len(operadores)> 0:
+		global tempCont
+		if operadores[len(operadores)-1] == '||' or operadores[len(operadores)-1] == '&&' or operadores[len(operadores)-1] == 'OR' or operadores[len(operadores)-1] == 'AND' :
+			varTemp= "t" + str(tempCont)
+			derecho = variables.pop()
+			izquierdo = variables.pop()
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(), izquierdo, derecho , varTemp))
+			variables.append(varTemp)
+			tempCont = tempCont + 1
 
 
 
@@ -306,20 +354,72 @@ def p_CuadruploCreaPow(p):
 #Conditions------------------------------------------------------------------------------------------
 
 def p_condition(p):
-	'Conditions : PR_if Token_Parent_Abierto SuperExp Token_Parent_Cerrado Token_Llave_Abierta bloque Token_Llave_Cerrado PR_else Token_Llave_Abierta bloque Token_Llave_Cerrado'
+	'Conditions : PR_if Token_Parent_Abierto  CuadruploSaltosINI SuperExp Token_Parent_Cerrado CuadruploCon Token_Llave_Abierta bloque CuadruploConEnd Token_Llave_Cerrado PR_else Token_Llave_Abierta bloque Token_Llave_Cerrado CuadruplosFinal'
+
+def p_CuadruploCon(p):
+	'CuadruploCon : empty'
+	global tempSaltos
+	if len(variables)> 0:
+        		# PILA JUMP 
+		saltos.append(len(cuadruplos))
+		cuadruplos.append(cuadruplo(len(cuadruplos), 'GOTOF', variables.pop(), None ,None ))
+
+		
+def p_CuadruploConEnd(p):
+	'CuadruploConEnd : empty'
+	global tempSaltos
+	tempSaltos = saltos.pop()
+	cuadruplos[tempSaltos].var3 = len(cuadruplos)+1
+	cuadruplos.append(cuadruplo(len(cuadruplos), 'GOTO', None, None ,None))
+	saltos.append(len(cuadruplos))
+
+def p_CuadruplosFinal(p):
+	'CuadruplosFinal : empty'
+	cuadruplos[saltos.pop()-1].var3 = len(cuadruplos)
 
 #Ciclos-----------------------------------------------------------------------------------------------
 
 def p_ciclos(p):
-	'ciclos : PR_while Token_Parent_Abierto SuperExp Token_Parent_Cerrado Token_Llave_Abierta bloque Token_Llave_Cerrado'
+	'ciclos : PR_while Token_Parent_Abierto  CuadruploSaltosINI SuperExp Token_Parent_Cerrado CuadruploCiclos Token_Llave_Abierta bloque Token_Llave_Cerrado CuadruploCiclosEnd '
 
-            
+def p_CuadruploSaltosINI(p) :
+	'CuadruploSaltosINI : empty'
+	saltos.append(len(cuadruplos))
+
+
+def p_CuadruploCiclos(p):
+	'CuadruploCiclos  : empty'
+	if len(variables)> 0:
+	   saltos.append(len(cuadruplos))		         
+	   cuadruplos.append(cuadruplo(len(cuadruplos), 'GOTOF', variables.pop(), None ,None ))
+
+def p_CuadruploCiclosEnd(p):
+	'CuadruploCiclosEnd : empty'
+	global tempSaltos
+	tempSaltos = saltos.pop()
+	cuadruplos[tempSaltos].var3 = len(cuadruplos)+1
+	cuadruplos.append(cuadruplo(len(cuadruplos), 'GOTO', None, None ,saltos.pop()))
+
+	
+
+
+
 #asignasiones--------------------------------------------------------------------------------------------
 
 def p_asignaciones(p):
-    '''asigna : ID TOKEN_ASIGNA SuperExp Token_Punto_Coma
-      | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado TOKEN_ASIGNA SuperExp Token_Punto_Coma
-      | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado Token_Corchete_Abierto miniExp Token_Corchete_Cerrado TOKEN_ASIGNA SuperExp Token_Punto_Coma '''
+    '''asigna : ID CuadruploMiniExp TOKEN_ASIGNA CuadruploOpp SuperExp CuadruplosAsigna  Token_Punto_Coma
+      | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado TOKEN_ASIGNA  CuadruploOpp SuperExp CuadruplosAsigna  Token_Punto_Coma
+      | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado Token_Corchete_Abierto miniExp Token_Corchete_Cerrado TOKEN_ASIGNA CuadruploOpp SuperExp CuadruplosAsigna Token_Punto_Coma '''
+
+def p_CuadruploAsigna(p):
+	'CuadruplosAsigna : empty'
+	if len(operadores)> 0:
+		if operadores[len(operadores)-1] == '=' :
+			cuadruplos.append(cuadruplo(len(cuadruplos), operadores.pop(),variables.pop(), None , variables.pop()))
+
+
+
+
 
 #Premade Funtions -----------------------------------------------------------------------------------------
 
@@ -391,11 +491,13 @@ f = open(archivo, 'r')
 s = f.read()
 parser.parse(s)
 
-for i in range(0,len(variables)):
-	print (variables[i])
+for i in range(0,len(cuadruplos)):
+   print (cuadruplos[i].ind, cuadruplos[i].estatuto,   cuadruplos[i].var1,   cuadruplos[i].var2,   cuadruplos[i].var3 )
 
-for i in range(0,len(operadores)):
-	print (operadores[i])
+#for i in range(0,len(saltos)):
+ #  print (saltos[i])
+
+
 
 
 if valido == True:
