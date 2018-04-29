@@ -264,7 +264,7 @@ def p_minimicroExp(p):
 	           | conjunto CuadruplosCreaPow  TOKEN_POW CuadruploOpp minimicroExp '''
 
 def p_conjunto(p):
-	'''conjunto : ID p_CuadruploMiniExp
+	'''conjunto : ID CuadruploMiniExp
 	           | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado
 	           | ID Token_Corchete_Abierto miniExp Token_Corchete_Cerrado Token_Corchete_Abierto miniExp Token_Corchete_Cerrado
 	           | Token_Entero  CuadruploMiniExp
